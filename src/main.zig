@@ -24,31 +24,51 @@ pub fn main() !void {
 
     // writer
     var writer_buffer: [1024]u8 = undefined;
-    var stdout = std.fs.File.stdout().writer(&writer_buffer);
-    const w = &stdout.interface;
+    var stdout: std.fs.File.Writer = std.fs.File.stdout().writer(&writer_buffer);
+    const w: *std.Io.Writer = &stdout.interface;
 
     // reader
     var reader_buff: [1024]u8 = undefined;
-    var stdin = std.fs.File.stdin().reader(&reader_buff);
-    const r = &stdin.interface;
+    var stdin: std.fs.File.Reader = std.fs.File.stdin().reader(&reader_buff);
+    const r: *std.Io.Reader = &stdin.interface;
 
     // iter over args
     for (args) |arg| {
-        // std.debug.print("#{d}. {s}\n", .{ i, arg });
         if (std.mem.eql(u8, arg, "add")) {
-            const b_read: usize = try cmd.getTask(r, w);
-
-            // debuging
-            std.debug.print("Reader Buffer: {s}\n", .{reader_buff});
-            std.debug.print("Writer Buffer: {s}\n", .{writer_buffer});
-
-            try w.print("{d} bytes read\n", .{b_read});
-            try w.print("Task: {s}\n", .{reader_buff[0..b_read]});
+            try w.print("What Would You like To Add?\n", .{});
+            try w.print("-> ", .{});
+            try w.flush();
+            const todo_sum: []u8 = try cmd.getTask(r);
+            try w.print("Todo: {s}\n", .{todo_sum});
             try w.flush();
 
-            // debuging
-            std.debug.print("Reader Buffer: {s}\n", .{reader_buff});
-            std.debug.print("Writer Buffer: {s}\n", .{writer_buffer});
+            // Add this task to db
+        }
+
+        if (std.mem.eql(u8, arg, "remove")) {
+            // Print All Pending Tasks.
+            // const tasks: []todo.Task = undefined;
+            // for (tasks) |t| {
+            //     w.print("#{d}. {s}\n", .{ t.id, t.summery });
+            // }
+
+            // get user task id from user, which to be removed
+            // try w.print("Which task would you like to remove?\n", .{});
+            // try w.print("ID? ", .{});
+            // try w.flush();
+            // const id: u8 = try r.takeByte();
+
+            // check if it's a valid id.
+            // for (tasks) |t| {
+            //     // if valid remove task from db
+            //     if (t.id == id) {
+            // Remove Task from DB
+            // try w.print("Task removed successfuly", .{});
+            //     }
+            // } else {
+            //     std.debug.print("Invalid ID?\n", .{});
+            //     return;
+            // }
         }
     }
 }
