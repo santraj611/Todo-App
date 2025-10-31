@@ -36,6 +36,10 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
+    // linking sqlite
+    exe.linkSystemLibrary("sqlite3");
+    exe.linkLibC();
+
     b.installArtifact(exe);
 
     const run_step = b.step("run", "Run the app");
@@ -52,7 +56,6 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }
-
 
     // Creates an executable that will run `test` blocks from the executable's
     // root module. Note that test executables only test one module at a time,
