@@ -24,7 +24,7 @@ pub fn main() !void {
     var db: Db = try Db.init(gpa);
     defer db.close();
 
-    std.debug.print("Database Opend\n", .{});
+    std.debug.print("Database is working?\n", .{});
 
     const args = try std.process.argsAlloc(gpa);
     defer std.process.argsFree(gpa, args);
