@@ -22,7 +22,8 @@ pub fn init(alloc: std.mem.Allocator) !Db {
 
     const file_path = try std.fs.path.join(alloc, &.{ db_dir, "database.db" });
     defer alloc.free(file_path);
-    const path: [*:0]const u8 = try alloc.dupeZ(u8, file_path);
+    const path = try alloc.dupeZ(u8, file_path);
+    defer alloc.free(path);
 
     var db: ?*sqlite.sqlite3 = undefined;
     const rc: c_int = sqlite.sqlite3_open(path, &db);
