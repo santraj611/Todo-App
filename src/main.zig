@@ -1,8 +1,10 @@
 const std = @import("std");
 const builtin = @import("builtin");
+
 const cli = @import("cli.zig");
-const todo = @import("todo.zig");
 const cmd = @import("commands.zig");
+const Db = @import("database.zig");
+const todo = @import("todo.zig");
 
 var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
 
@@ -18,6 +20,11 @@ pub fn main() !void {
     defer if (is_debug) {
         _ = debug_allocator.deinit();
     };
+
+    var db: Db = try Db.init(gpa);
+    defer db.close();
+
+    std.debug.print("Database Opend\n", .{});
 
     const args = try std.process.argsAlloc(gpa);
     defer std.process.argsFree(gpa, args);
