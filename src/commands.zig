@@ -1,15 +1,18 @@
 const std = @import("std");
 const cli = @import("cli.zig");
 
-const ReadErros = error{ ReadFailed, TaskTooLong, EmptyTask };
+const ReadErros = error{ ReadFailed, TaskTooLong, NoInput, OutOfMemory };
 
 /// get task from user and returns the slice
-pub fn getTask(r: *std.Io.Reader) ReadErros![]u8 {
-    const task_maybe: ?[]u8 = r.takeDelimiter('\n') catch |err| switch (err) {
+pub fn getTask(alloc: std.mem.Allocator, r: *std.Io.Reader) ReadErros![]u8 {
+    const line: ?[]u8 = r.takeDelimiter('\n') catch |err| switch (err) {
         error.StreamTooLong => return ReadErros.TaskTooLong,
         error.ReadFailed => return ReadErros.ReadFailed,
     };
 
-    if (task_maybe.?.len == 0) return error.EmptyTask;
-    return task_maybe.?;
+    // takeDelimiter returns ?[]u8
+    const slice = line orelse return ReadErros.NoInput;
+
+    // make a copy that caller owns
+    return try alloc.dupe(u8, slice);
 }
