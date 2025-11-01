@@ -24,8 +24,6 @@ pub fn main() !void {
     var db: Db = try Db.init(gpa);
     defer db.close();
 
-    std.debug.print("Database is working?\n", .{});
-
     const args = try std.process.argsAlloc(gpa);
     defer std.process.argsFree(gpa, args);
 
@@ -42,14 +40,25 @@ pub fn main() !void {
     // iter over args
     for (args) |arg| {
         if (std.mem.eql(u8, arg, "add")) {
+            const task = try gpa.create(todo.Task);
+            defer gpa.destroy(task);
+            task.completed = 0;
+
             try w.print("What Would You like To Add?\n", .{});
-            try w.print("-> ", .{});
+            try w.print("Summery: ", .{});
             try w.flush();
-            const todo_sum: []u8 = try cmd.getTask(r);
-            try w.print("Todo: {s}\n", .{todo_sum});
+            const summery = try cmd.getTask(gpa, r);
+            task.summery = summery;
+            defer gpa.free(summery);
+
+            try w.print("Description: ", .{});
             try w.flush();
+            const description = try cmd.getTask(gpa, r);
+            task.description = description;
+            defer gpa.free(description);
 
             // Add this task to db
+            try todo.add(gpa, &db, task);
         }
 
         if (std.mem.eql(u8, arg, "remove")) {
