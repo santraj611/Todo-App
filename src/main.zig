@@ -60,6 +60,15 @@ pub fn main() !void {
             try todo.add(gpa, &db, task);
         }
 
+        if (std.mem.eql(u8, arg, "list")) {
+            var tasks = try db.fetchAll(gpa);
+            defer todo.freeTasks(&tasks, gpa);
+            for (tasks.items) |task| {
+                try w.print("Id: {d}\nSummery: {s}\nDescription: {s}\nCompleted: {d}\n", .{ task.id, task.summery, task.description, task.completed });
+                try w.flush();
+            }
+        }
+
         if (std.mem.eql(u8, arg, "remove")) {
             // Print All Pending Tasks.
             // const tasks: []todo.Task = undefined;
