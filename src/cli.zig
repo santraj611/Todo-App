@@ -1,15 +1,17 @@
 const std = @import("std");
 
-/// read user input from stdin
-pub fn readInput(alloc: std.mem.Allocator, buffer: []u8) !usize {
-    const stdin_buffer: []u8 = try alloc.alloc(u8, 1024);
-    defer alloc.free(stdin_buffer);
+const ReadErros = error{ ReadFailed, TaskTooLong, NoInput, OutOfMemory };
 
-    var w: std.io.Writer = .fixed(buffer);
+/// get task from user and returns the slice
+pub fn getTask(alloc: std.mem.Allocator, r: *std.Io.Reader) ReadErros![]u8 {
+    const line: ?[]u8 = r.takeDelimiter('\n') catch |err| switch (err) {
+        error.StreamTooLong => return ReadErros.TaskTooLong,
+        error.ReadFailed => return ReadErros.ReadFailed,
+    };
 
-    var stdin_reader = std.fs.File.stdin().reader(stdin_buffer);
-    const stdin = &stdin_reader.interface;
-    const bytes_read: usize = try stdin.streamDelimiter(&w, '\n');
+    // takeDelimiter returns ?[]u8
+    const slice = line orelse return ReadErros.NoInput;
 
-    return bytes_read;
+    // make a copy that caller owns
+    return try alloc.dupe(u8, slice);
 }

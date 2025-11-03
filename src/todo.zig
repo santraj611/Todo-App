@@ -6,6 +6,11 @@ pub const Task = struct {
     summery: []const u8,
     description: []const u8,
     completed: u1, // 1 for completed and 0 for unfinished
+
+    pub fn deinit(self: *Task, alloc: std.mem.Allocator) void {
+        alloc.free(self.summery);
+        alloc.free(self.description);
+    }
 };
 
 /// Adds a task to the database
@@ -18,4 +23,11 @@ pub fn add(alloc: std.mem.Allocator, db: *Db, task: *Task) !void {
     // std.debug.print("summery: {s}\ndescription: {s}\ncompleted: {d}\n", .{ task.summery, task.description, task.completed });
 
     try db.exec(query);
+}
+
+pub fn freeTasks(list: *std.ArrayList(Task), alloc: std.mem.Allocator) void {
+    for (list.items) |*task| {
+        task.deinit(alloc);
+    }
+    list.deinit(alloc);
 }

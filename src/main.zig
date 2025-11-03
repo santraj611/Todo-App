@@ -40,25 +40,33 @@ pub fn main() !void {
     // iter over args
     for (args) |arg| {
         if (std.mem.eql(u8, arg, "add")) {
-            const task = try gpa.create(todo.Task);
-            defer gpa.destroy(task);
-            task.completed = 0;
-
             try w.print("What Would You like To Add?\n", .{});
             try w.print("Summery: ", .{});
             try w.flush();
-            const summery = try cmd.getTask(gpa, r);
-            task.summery = summery;
+            const summery = try cli.getTask(gpa, r);
             defer gpa.free(summery);
 
             try w.print("Description: ", .{});
             try w.flush();
-            const description = try cmd.getTask(gpa, r);
-            task.description = description;
+            const description = try cli.getTask(gpa, r);
             defer gpa.free(description);
 
             // Add this task to db
+            const task: *todo.Task = try gpa.create(todo.Task);
+            defer gpa.destroy(task);
+            task.completed = 0;
+            task.summery = summery;
+            task.description = description;
             try todo.add(gpa, &db, task);
+        }
+
+        if (std.mem.eql(u8, arg, "list")) {
+            var tasks = try db.fetchAll(gpa);
+            defer todo.freeTasks(&tasks, gpa);
+            for (tasks.items) |task| {
+                try w.print("Id: {d}\nSummery: {s}\nDescription: {s}\nCompleted: {d}\n", .{ task.id, task.summery, task.description, task.completed });
+                try w.flush();
+            }
         }
 
         if (std.mem.eql(u8, arg, "remove")) {
