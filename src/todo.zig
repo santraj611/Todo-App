@@ -14,7 +14,7 @@ pub const Task = struct {
 };
 
 /// Adds a task to the database
-pub fn add(alloc: std.mem.Allocator, db: *Db, task: *Task) !void {
+pub fn addTask(alloc: std.mem.Allocator, db: *Db, task: *Task) !void {
     const query: [:0]const u8 = try std.fmt.allocPrintSentinel(alloc,
         \\INSERT INTO todos (summery, description, completed) VALUES('{s}', '{s}', {d})
     , .{ task.summery, task.description, task.completed }, 0);
@@ -30,4 +30,23 @@ pub fn freeTasks(list: *std.ArrayList(Task), alloc: std.mem.Allocator) void {
         task.deinit(alloc);
     }
     list.deinit(alloc);
+}
+
+/// removes a task from the database
+/// takes the id of task to remove it.
+pub fn removeTask(db: *Db, id: usize) !void {
+    var buf: [216]u8 = undefined;
+    const sql: [:0]const u8 = try std.fmt.bufPrintZ(&buf, "DELETE FROM todos WHERE id = {d}", .{id});
+    try db.exec(sql);
+}
+
+/// this function marks a task done.
+pub fn markDone(db: *Db, id: usize) !void {
+    var buf: [512]u8 = undefined;
+    const sql: [:0]const u8 = try std.fmt.bufPrintZ(&buf,
+        \\UPDATE todos
+        \\SET completed = {d}
+        \\WHERE id = {}
+    , .{ 1, id });
+    try db.exec(sql);
 }
