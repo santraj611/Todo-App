@@ -8,11 +8,13 @@ const sqlite = @cImport({
 });
 
 const Db = @This();
-
 db: ?*sqlite.sqlite3,
 
 /// This function initializes the database
-pub fn init(alloc: std.mem.Allocator) !Db {
+pub fn init(alloc: std.mem.Allocator) !*Db {
+    const self = try alloc.create(Db);
+    self.* = .{ .db = null };
+
     // create a dir for database
     const home = std.posix.getenv("HOME");
     const db_dir = try std.fs.path.join(alloc, &.{ home.?, ".local", "state", "todo-app" });
@@ -34,6 +36,7 @@ pub fn init(alloc: std.mem.Allocator) !Db {
         std.debug.print("Failed to Open the Database due to {any}\n", .{sqlite.sqlite3_errmsg(db)});
         return error.OpenFailed;
     }
+    self.db = db;
 
     var errMsg: [*c]u8 = undefined;
     const sql: [:0]const u8 =
@@ -52,14 +55,15 @@ pub fn init(alloc: std.mem.Allocator) !Db {
         return error.ExecError;
     }
 
-    return .{ .db = db };
+    return self;
 }
 
-pub fn close(self: *Db) void {
+pub fn close(self: *Db, alloc: std.mem.Allocator) void {
     const rc: c_int = sqlite.sqlite3_close(self.db);
     if (rc != sqlite.SQLITE_OK) {
         std.debug.print("Failed to close the database\n", .{});
     }
+    alloc.destroy(self);
 }
 
 pub fn exec(self: *Db, sql: [:0]const u8) !void {
@@ -77,9 +81,9 @@ pub fn fetchAll(self: *Db, alloc: std.mem.Allocator) !std.array_list.Aligned(tod
     const sql = "SELECT * FROM todos;";
     var stmt: ?*sqlite.sqlite3_stmt = null;
 
-    if (sqlite.sqlite3_prepare_v2(self.db.?, sql, -1, &stmt, null) != sqlite.SQLITE_OK) {
+    if (sqlite.sqlite3_prepare_v2(self.db, sql, -1, &stmt, null) != sqlite.SQLITE_OK) {
         std.debug.print("Failed to prepare query\n", .{});
-        _ = sqlite.sqlite3_close(self.db.?);
+        _ = sqlite.sqlite3_close(self.db);
         return error.PrepareError;
     }
 
